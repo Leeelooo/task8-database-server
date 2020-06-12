@@ -1,6 +1,5 @@
 package ru.ifmo.database.server.initialization.impl;
 
-import lombok.Getter;
 import ru.ifmo.database.server.initialization.DatabaseInitializationContext;
 import ru.ifmo.database.server.logic.Table;
 
@@ -8,31 +7,34 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-@Getter
 public class DatabaseInitializationContextImpl implements DatabaseInitializationContext {
+    private final Map<String, Table> tables;
+    private final String databaseName;
+    private final Path databasePath;
 
-
-    public DatabaseInitializationContextImpl(String dbName, Path databaseRoot) {
-        throw new UnsupportedOperationException(); // todo implement
+    public DatabaseInitializationContextImpl(String databaseName, Path databaseRoot) {
+        this.databaseName = databaseName;
+        this.databasePath = databaseRoot;
+        this.tables = new HashMap<>();
     }
 
     @Override
     public String getDbName() {
-        throw new UnsupportedOperationException(); // todo implement
+        return databaseName;
     }
 
     @Override
     public Path getDatabasePath() {
-        throw new UnsupportedOperationException(); // todo implement
+        return databasePath;
     }
 
     @Override
     public Map<String, Table> getTables() {
-        throw new UnsupportedOperationException(); // todo implement
+        return tables;
     }
 
     @Override
     public void addTable(Table table) {
-        throw new UnsupportedOperationException(); // todo implement
+        tables.put(table.getName(), table);
     }
 }

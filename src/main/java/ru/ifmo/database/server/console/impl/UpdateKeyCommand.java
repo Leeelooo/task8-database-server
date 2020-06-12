@@ -9,7 +9,6 @@ import ru.ifmo.database.server.logic.Database;
 import java.util.Optional;
 
 public class UpdateKeyCommand implements DatabaseCommand {
-
     private final ExecutionEnvironment env;
     private final String databaseName;
     private final String tableName;
@@ -28,13 +27,18 @@ public class UpdateKeyCommand implements DatabaseCommand {
     }
 
     @Override
-    public DatabaseCommandResult execute() throws DatabaseException {
+    public DatabaseCommandResult execute() {
         Optional<Database> database = env.getDatabase(databaseName);
         if (database.isEmpty()) {
-            throw new DatabaseException("No such database: " + databaseName);
+            return DatabaseCommandResult.error("No such database: " + databaseName);
         }
-        String prevValue = database.get().read(tableName, key);
-        database.get().write(tableName, key, value);
+        String prevValue = null;
+        try {
+            prevValue = database.get().read(tableName, key);
+            database.get().write(tableName, key, value);
+        } catch (DatabaseException e) {
+            return DatabaseCommandResult.error(e.getMessage());
+        }
         return DatabaseCommandResult.success(prevValue);
     }
 }

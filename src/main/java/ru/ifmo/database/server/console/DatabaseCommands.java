@@ -1,38 +1,85 @@
 package ru.ifmo.database.server.console;
 
-import ru.ifmo.database.server.console.impl.CreateDatabaseCommand;
-import ru.ifmo.database.server.console.impl.CreateTableCommand;
-import ru.ifmo.database.server.console.impl.ReadKeyCommand;
-import ru.ifmo.database.server.console.impl.UpdateKeyCommand;
-import com.ifmo.database.server.logic.impl.DatabaseImpl;
+import ru.ifmo.database.server.console.impl.*;
+import ru.ifmo.database.server.logic.impl.DatabaseFactoryImpl;
+import ru.ifmo.database.server.utils.StringUtils;
+
+import java.util.stream.Stream;
 
 public enum DatabaseCommands {
+    CREATE_DATABASE() {
+        @Override
+        protected DatabaseCommand createCommand(ExecutionEnvironment environment, String... options) {
+            return new CreateDatabaseCommand(environment, new DatabaseFactoryImpl(), options[1]);
+        }
 
-    CREATE_DATABASE {
         @Override
-        public DatabaseCommand getCommand(ExecutionEnvironment env, String... args) {
-            return new CreateDatabaseCommand(env, DatabaseImpl::create, args);
+        public int getOptionsCount() {
+            return 2;
         }
     },
-    CREATE_TABLE {
+    CREATE_TABLE() {
         @Override
-        public DatabaseCommand getCommand(ExecutionEnvironment env, String... args) {
-            return new CreateTableCommand(env, args);
+        protected DatabaseCommand createCommand(ExecutionEnvironment environment, String... options) {
+            return new CreateTableCommand(environment, options[1], options[2]);
+        }
+
+        @Override
+        public int getOptionsCount() {
+            return 3;
         }
     },
-    UPDATE_KEY {
+    READ_KEY() {
         @Override
-        public DatabaseCommand getCommand(ExecutionEnvironment env, String... args) {
-            return new UpdateKeyCommand(env, args);
+        protected DatabaseCommand createCommand(ExecutionEnvironment environment, String... options) {
+            return new ReadKeyCommand(environment, options[1], options[2], options[3]);
+        }
+
+        @Override
+        protected int getOptionsCount() {
+            return 4;
         }
     },
-    READ_KEY {
+    UPDATE_KEY() {
         @Override
-        public DatabaseCommand getCommand(ExecutionEnvironment env, String... args) {
-            return new ReadKeyCommand(env, args);
+        protected DatabaseCommand createCommand(ExecutionEnvironment environment, String... options) {
+            return new UpdateKeyCommand(environment, options[1], options[2], options[3], options[4]);
+        }
+
+        @Override
+        protected int getOptionsCount() {
+            return 5;
         }
     };
 
+    public static DatabaseCommand of(
+            ExecutionEnvironment environment,
+            String input
+    ) {
+        if (StringUtils.isEmptyOrNull(input)) {
+            new InvalidCommand("Empty or null input.");
+        }
+        var options = input.split(" ");
+        if (Stream.of(DatabaseCommands.values())
+                .noneMatch(s -> s.name().equals(options[0]))) {
+            return new InvalidCommand(String.format("Unknown command %s passed.", options[0]));
+        }
+        return DatabaseCommands.valueOf(options[0]).getCommand(environment, options);
+    }
 
-    public abstract DatabaseCommand getCommand(ExecutionEnvironment env, String... args);
+    private static final DatabaseCommand WRONG_PARAMS_COUNT = new InvalidCommand("Wrong params count.");
+
+    protected abstract DatabaseCommand createCommand(ExecutionEnvironment environment, String... options);
+    protected abstract int getOptionsCount();
+
+    public DatabaseCommand getCommand(ExecutionEnvironment environment, String... options) {
+        return isOptionsCountCorrect(options.length)
+                ? createCommand(environment, options)
+                : WRONG_PARAMS_COUNT;
+    }
+
+    protected boolean isOptionsCountCorrect(int optionsCount) {
+        return getOptionsCount() == optionsCount;
+    }
+
 }

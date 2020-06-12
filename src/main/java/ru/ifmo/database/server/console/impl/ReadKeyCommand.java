@@ -9,7 +9,6 @@ import ru.ifmo.database.server.logic.Database;
 import java.util.Optional;
 
 public class ReadKeyCommand implements DatabaseCommand {
-
     private final ExecutionEnvironment env;
     private final String databaseName;
     private final String tableName;
@@ -26,12 +25,17 @@ public class ReadKeyCommand implements DatabaseCommand {
     }
 
     @Override
-    public DatabaseCommandResult execute() throws DatabaseException {
+    public DatabaseCommandResult execute() {
         Optional<Database> database = env.getDatabase(databaseName);
         if (database.isEmpty()) {
-            throw new DatabaseException("No such database: " + databaseName);
+            return DatabaseCommandResult.error("No such database: " + databaseName);
         }
-        String result = database.get().read(tableName, key);
+        String result = null;
+        try {
+            result = database.get().read(tableName, key);
+        } catch (DatabaseException e) {
+            return DatabaseCommandResult.error(e.getMessage());
+        }
         return DatabaseCommandResult.success(result);
     }
 }

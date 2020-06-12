@@ -6,6 +6,7 @@ import ru.ifmo.database.server.initialization.SegmentInitializationContext;
 import ru.ifmo.database.server.logic.Segment;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -16,13 +17,48 @@ import java.nio.file.Path;
  * - является неизменяемым после появления более нового сегмента
  */
 public class SegmentImpl implements Segment {
+    private final SegmentIndex segmentIndex;
+    private final String segmentName;
+    private final Path segmentPath;
+    private int segmentSize;
 
-    public SegmentImpl(SegmentInitializationContext context) {
-        throw new UnsupportedOperationException(); // todo implement
+    private SegmentImpl(
+            String segmentName,
+            Path segmentPath,
+            int segmentSize,
+            SegmentIndex segmentIndex
+    ) {
+        this.segmentName = segmentName;
+        this.segmentPath = segmentPath;
+        this.segmentSize = segmentSize;
+        this.segmentIndex = segmentIndex;
     }
 
-    static Segment create(String segmentName, Path tableRootPath) throws DatabaseException {
-        throw new UnsupportedOperationException(); // todo implement
+    public static Segment create(SegmentInitializationContext context) throws DatabaseException {
+        return create(
+                context.getSegmentName(),
+                context.getSegmentPath(),
+                context.getCurrentSize(),
+                context.getIndex()
+        );
+    }
+
+    static Segment create(
+            String segmentName,
+            Path tableRootPath,
+            int segmentSize,
+            SegmentIndex segmentIndex
+    ) throws DatabaseException {
+        if (!Files.isDirectory(tableRootPath.resolve(segmentName))) {
+            throw new DatabaseException(
+                    String.format(
+                            "There is no %s segment in table %s",
+                            segmentName,
+                            tableRootPath.getParent().toString()
+                    )
+            );
+        }
+        return new SegmentImpl(segmentName, tableRootPath.resolve(segmentName), segmentSize, segmentIndex);
     }
 
     static String createSegmentName(String tableName) {
@@ -31,21 +67,51 @@ public class SegmentImpl implements Segment {
 
     @Override
     public String getName() {
-        throw new UnsupportedOperationException(); // todo implement
+        return segmentName;
     }
 
     @Override
     public boolean write(String objectKey, String objectValue) throws IOException, DatabaseException {
-        throw new UnsupportedOperationException(); // todo implement
+        if (isReadOnly()) {
+            throw new DatabaseException("Segment is full.");
+        }
+
+        var storingUnit = new DatabaseStoringUnit(objectKey, objectValue);
+        try (final var outputStream = new DatabaseOutputStream(Files.newOutputStream(segmentPath))) {
+            outputStream.write(storingUnit);
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            return false;
+        }
+        segmentSize += storingUnit.getUnitLength();
+        return true;
     }
 
     @Override
     public String read(String objectKey) throws IOException {
-        throw new UnsupportedOperationException(); // todo implement
+        var offset = segmentIndex.searchForKey(objectKey);
+        if (offset.isEmpty()) {
+            throw new IOException("No such key.");
+        }
+
+        try (final var inputStream = new DatabaseInputStream(Files.newInputStream(segmentPath))) {
+            inputStream.skipNBytes(offset.get().getOffset());
+            var storingUnit = inputStream.readDbUnit();
+            if (storingUnit.isEmpty()) {
+                throw new IOException("Indexing troubles.");
+            }
+
+            var key = new String(storingUnit.get().getKey());
+            if (!key.equals(objectKey)) {
+                throw new IOException("Indexing troubles.");
+            }
+            return new String(storingUnit.get().getValue());
+        }
     }
 
     @Override
     public boolean isReadOnly() {
-        throw new UnsupportedOperationException(); // todo implement
+        return segmentSize >= Segment.DEFAULT_SIZE_IN_BYTES;
     }
 }

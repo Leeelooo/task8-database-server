@@ -12,6 +12,6 @@ public class SegmentIndexInfoImpl implements SegmentIndexInfo {
 
     @Override
     public long getOffset() {
-        throw new UnsupportedOperationException(); // todo implement
+        return offset;
     }
 }

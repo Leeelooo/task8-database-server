@@ -16,7 +16,7 @@ public class ExecutionEnvironmentImpl implements ExecutionEnvironment {
     private final Path workingPath;
 
     public ExecutionEnvironmentImpl() {
-        this(Path.of("", DEFAULT_DATABASE_FILES_DIRECTORY_NAME));
+        this(Path.of(".", DEFAULT_DATABASE_FILES_DIRECTORY_NAME));
     }
 
     public ExecutionEnvironmentImpl(Path workingPath) {

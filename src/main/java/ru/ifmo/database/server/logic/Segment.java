@@ -12,6 +12,7 @@ import java.io.IOException;
  * - является неизменяемым после появления более нового сегмента
  */
 public interface Segment {
+    int DEFAULT_SIZE_IN_BYTES = 100_000;
 
     String getName();
 

@@ -1,5 +1,8 @@
 package ru.ifmo.database.server.logic.impl;
 
+import lombok.Getter;
+
+@Getter
 public class DatabaseStoringUnit {
 
     private final byte[] key;
@@ -18,4 +21,9 @@ public class DatabaseStoringUnit {
         this.value = value;
         valueSize = value.length;
     }
+
+    public int getUnitLength() {
+        return valueSize + keySize + 2 * 4;
+    }
+
 }

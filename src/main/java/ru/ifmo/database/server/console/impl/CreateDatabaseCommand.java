@@ -6,24 +6,28 @@ import ru.ifmo.database.server.console.ExecutionEnvironment;
 import ru.ifmo.database.server.exception.DatabaseException;
 import ru.ifmo.database.server.logic.DatabaseFactory;
 
-public class CreateDatabaseCommand implements DatabaseCommand {
-
+public final class CreateDatabaseCommand implements DatabaseCommand {
     private final ExecutionEnvironment env;
     private final DatabaseFactory databaseFactory;
     private final String databaseName;
 
-    public CreateDatabaseCommand(ExecutionEnvironment env, DatabaseFactory factory, String... args) {
-        if (args.length < 2) {
-            throw new IllegalArgumentException("Not enough args");
-        }
+    public CreateDatabaseCommand(
+            ExecutionEnvironment env,
+            DatabaseFactory factory,
+            String databaseName
+    ) {
         this.env = env;
         this.databaseFactory = factory;
-        this.databaseName = args[1];
+        this.databaseName = databaseName;
     }
 
     @Override
-    public DatabaseCommandResult execute() throws DatabaseException {
-        env.addDatabase(databaseFactory.createNonExistent(databaseName, env.getWorkingPath()));
+    public DatabaseCommandResult execute() {
+        try {
+            env.addDatabase(databaseFactory.createNonExistent(databaseName, env.getWorkingPath()));
+        } catch (DatabaseException e) {
+            return DatabaseCommandResult.error(e.getMessage());
+        }
         return DatabaseCommandResult.success("Database: " + databaseName + "created");
     }
 }
