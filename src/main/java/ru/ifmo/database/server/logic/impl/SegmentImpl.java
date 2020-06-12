@@ -2,6 +2,7 @@ package ru.ifmo.database.server.logic.impl;
 
 import ru.ifmo.database.server.exception.DatabaseException;
 import ru.ifmo.database.server.index.impl.SegmentIndex;
+import ru.ifmo.database.server.index.impl.SegmentIndexInfoImpl;
 import ru.ifmo.database.server.initialization.SegmentInitializationContext;
 import ru.ifmo.database.server.logic.Segment;
 
@@ -45,20 +46,14 @@ public class SegmentImpl implements Segment {
 
     static Segment create(
             String segmentName,
-            Path tableRootPath,
+            Path segmentPath,
             int segmentSize,
             SegmentIndex segmentIndex
     ) throws DatabaseException {
-        if (!Files.isDirectory(tableRootPath.resolve(segmentName))) {
-            throw new DatabaseException(
-                    String.format(
-                            "There is no %s segment in table %s",
-                            segmentName,
-                            tableRootPath.getParent().toString()
-                    )
-            );
+        if (!Files.exists(segmentPath)) {
+             throw new DatabaseException("There is no such segment.");
         }
-        return new SegmentImpl(segmentName, tableRootPath.resolve(segmentName), segmentSize, segmentIndex);
+        return new SegmentImpl(segmentName, segmentPath, segmentSize, segmentIndex);
     }
 
     static String createSegmentName(String tableName) {
@@ -84,6 +79,7 @@ public class SegmentImpl implements Segment {
         } catch (Exception e) {
             return false;
         }
+        segmentIndex.onIndexedEntityUpdated(objectKey, new SegmentIndexInfoImpl(segmentSize - 1));
         segmentSize += storingUnit.getUnitLength();
         return true;
     }

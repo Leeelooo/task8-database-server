@@ -57,7 +57,7 @@ public enum DatabaseCommands {
             String input
     ) {
         if (StringUtils.isEmptyOrNull(input)) {
-            new InvalidCommand("Empty or null input.");
+            return new InvalidCommand("Empty or null input.");
         }
         var options = input.split(" ");
         if (Stream.of(DatabaseCommands.values())

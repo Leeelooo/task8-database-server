@@ -42,12 +42,11 @@ public class TableImpl implements Table {
             Segment currentSegment
     ) throws DatabaseException {
         if (!Files.isDirectory(tablePath)) {
-            throw new DatabaseException(
-                    String.format(
-                            "There is no %s table.",
-                            tableName
-                    )
-            );
+            try {
+                Files.createDirectory(tablePath);
+            } catch (IOException e) {
+                throw new DatabaseException(e.getMessage());
+            }
         }
         return new TableImpl(tableName, tablePath, tableIndex, currentSegment);
     }
@@ -96,21 +95,24 @@ public class TableImpl implements Table {
         } catch (IOException exception) {
             throw new DatabaseException(exception.getMessage());
         }
+        tableIndex.onIndexedEntityUpdated(objectKey, currentSegment);
     }
 
     @Override
     public String read(String objectKey) throws DatabaseException {
-        var value =
-                tableIndex.searchForKey(objectKey)
-                        .map(segment -> {
-                            try {
-                                return segment.read(objectKey);
-                            } catch (IOException exception) {
-                                return null;
-                            }
-                        });
+        var segmentWithKey = tableIndex.searchForKey(objectKey);
+        if (segmentWithKey.isEmpty()) {
+            throw new DatabaseException("No such key.");
+        }
+        var value = segmentWithKey.map(segment -> {
+            try {
+                return segment.read(objectKey);
+            } catch (IOException exception) {
+                return null;
+            }
+        });
         if (value.isEmpty()) {
-            throw new DatabaseException("No such key in table.");
+            throw new DatabaseException("Error reading table.");
         }
         return value.get();
     }

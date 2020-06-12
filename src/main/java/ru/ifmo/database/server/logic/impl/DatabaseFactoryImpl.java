@@ -22,7 +22,7 @@ public class DatabaseFactoryImpl implements DatabaseFactory {
         } catch (Exception exception) {
             throw new DatabaseException(exception);
         }
-        return DatabaseImpl.create(dbName, dbRoot, new HashMap<>());
+        return DatabaseImpl.create(dbName, path, new HashMap<>());
     }
 
 }

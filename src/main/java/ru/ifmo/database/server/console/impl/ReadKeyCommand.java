@@ -14,14 +14,16 @@ public class ReadKeyCommand implements DatabaseCommand {
     private final String tableName;
     private final String key;
 
-    public ReadKeyCommand(ExecutionEnvironment env, String... args) {
-        if (args.length < 4) {
-            throw new IllegalArgumentException("Not enough args");
-        }
+    public ReadKeyCommand(
+            ExecutionEnvironment env,
+            String databaseName,
+            String tableName,
+            String key
+    ) {
         this.env = env;
-        this.databaseName = args[1];
-        this.tableName = args[2];
-        this.key = args[3];
+        this.databaseName = databaseName;
+        this.tableName = tableName;
+        this.key = key;
     }
 
     @Override

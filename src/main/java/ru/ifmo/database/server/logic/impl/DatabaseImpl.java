@@ -7,34 +7,34 @@ import ru.ifmo.database.server.logic.Database;
 import ru.ifmo.database.server.logic.Segment;
 import ru.ifmo.database.server.logic.Table;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public class DatabaseImpl implements Database {
     private final String dbName;
-    private final Path databaseRoot;
+    private final Path databasePath;
     private final Map<String, Table> tables;
 
     public static Database initializeFromContext(DatabaseInitializationContext context) throws DatabaseException {
         return create(context.getDbName(), context.getDatabasePath(), context.getTables());
     }
 
-    public static Database create(String dbName, Path databaseRoot) throws DatabaseException {
-        return create(dbName, databaseRoot, new HashMap<>());
+    public static Database create(String dbName, Path databasePath) throws DatabaseException {
+        return create(dbName, databasePath, new HashMap<>());
     }
 
-    public static Database create(String dbName, Path databaseRoot, Map<String, Table> tables) throws DatabaseException {
-        return new DatabaseImpl(dbName, databaseRoot, tables);
+    public static Database create(String dbName, Path databasePath, Map<String, Table> tables) throws DatabaseException {
+        if (!Files.isDirectory(databasePath)) {
+            new DatabaseFactoryImpl().createNonExistent(".", databasePath);
+        }
+        return new DatabaseImpl(dbName, databasePath, tables);
     }
 
-    private DatabaseImpl(String dbName, Path databaseRoot, Map<String, Table> tables) {
+    private DatabaseImpl(String dbName, Path databasePath, Map<String, Table> tables) {
         this.dbName = dbName;
-        this.databaseRoot = databaseRoot;
+        this.databasePath = databasePath;
         this.tables = tables;
     }
 
@@ -50,7 +50,7 @@ public class DatabaseImpl implements Database {
 
     @Override
     public void createTableIfNotExists(String tableName, int segmentSizeInBytes) throws DatabaseException {
-        var path = databaseRoot.resolve(dbName).resolve(tableName);
+        var path = databasePath.resolve(tableName);
         if (Files.isDirectory(path)) {
             throw new DatabaseException(String.format("Table with name %s already exists.", tableName));
         }
