@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static java.nio.file.StandardOpenOption.APPEND;
+
 /**
  * Сегмент - append-only файл, хранящий пары ключ-значение, разделенные специальным символом.
  * - имеет ограниченный размер
@@ -72,14 +74,14 @@ public class SegmentImpl implements Segment {
         }
 
         var storingUnit = new DatabaseStoringUnit(objectKey, objectValue);
-        try (final var outputStream = new DatabaseOutputStream(Files.newOutputStream(segmentPath))) {
+        try (final var outputStream = new DatabaseOutputStream(Files.newOutputStream(segmentPath, APPEND))) {
             outputStream.write(storingUnit);
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
             return false;
         }
-        segmentIndex.onIndexedEntityUpdated(objectKey, new SegmentIndexInfoImpl(segmentSize - 1));
+        segmentIndex.onIndexedEntityUpdated(objectKey, new SegmentIndexInfoImpl(segmentSize));
         segmentSize += storingUnit.getUnitLength();
         return true;
     }
